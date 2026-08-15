@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
+from pathlib import Path
 
 from core.target import Target
 from core.action import Action, Delete
@@ -10,11 +11,25 @@ class ExcelAdapter(BaseAdapter):
     """Excel ファイル用 Adapter（openpyxl使用）"""
 
     def __init__(self, file_path: str, sheet_name: str = "Sheet1"):
+        # ファイルパスの検証
+        file_path = str(Path(file_path).resolve())
+        if not file_path.endswith((".xlsx", ".xls")):
+            raise ValueError("File must be an Excel file (.xlsx or .xls)")
+
         self.file_path = file_path
         self.sheet_name = sheet_name
         self.wb = None
         self.ws = None
         self._transactions = {}
+
+    @staticmethod
+    def _sanitize_cell_value(value: Any) -> Any:
+        """Formula Injection 対策：数式のプレフィックスをエスケープ"""
+        if isinstance(value, str):
+            # =, +, -, @ で始まる場合はシングルクォートを付与
+            if value and value[0] in ("=", "+", "-", "@"):
+                return f"'{value}"
+        return value
 
     def connect(self) -> None:
         """Excel ファイルを開く"""
@@ -85,13 +100,19 @@ class ExcelAdapter(BaseAdapter):
             # ヘッダー行を書き込む
             headers = list(records[0].keys())
             for col_idx, header in enumerate(headers, 1):
-                self.ws.cell(row=1, column=col_idx, value=header)
+                self.ws.cell(
+                    row=1, column=col_idx, value=self._sanitize_cell_value(header)
+                )
 
             # データ行を書き込む
             for row_idx, record in enumerate(records, 2):
                 for col_idx, header in enumerate(headers, 1):
                     value = record.get(header)
-                    self.ws.cell(row=row_idx, column=col_idx, value=value)
+                    self.ws.cell(
+                        row=row_idx,
+                        column=col_idx,
+                        value=self._sanitize_cell_value(value),
+                    )
 
             self.wb.save(self.file_path)
             return True

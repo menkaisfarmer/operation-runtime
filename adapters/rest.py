@@ -1,9 +1,14 @@
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
+from urllib.parse import urlparse
+import ipaddress
 
 from core.target import Target
 from core.action import Action, Delete
 from .base import BaseAdapter
+
+# デフォルトタイムアウト（秒）
+DEFAULT_TIMEOUT = 10
 
 
 class RestAdapter(BaseAdapter):
@@ -16,15 +21,51 @@ class RestAdapter(BaseAdapter):
         create_endpoint: str,
         update_endpoint: str,
         delete_endpoint: str,
+        timeout: int = DEFAULT_TIMEOUT,
+        allow_private_ips: bool = False,
     ):
+        # URL の検証
+        self._validate_url(base_url, allow_private_ips)
+
         self.base_url = base_url
         self.get_endpoint = get_endpoint
         self.create_endpoint = create_endpoint
         self.update_endpoint = update_endpoint
         self.delete_endpoint = delete_endpoint
+        self.timeout = timeout
+        self.allow_private_ips = allow_private_ips
         self._connected = False
         self._transactions = {}
         self.session = None
+
+    @staticmethod
+    def _validate_url(url: str, allow_private_ips: bool = False) -> None:
+        """URL の検証（SSRF 対策）"""
+        try:
+            parsed = urlparse(url)
+
+            # スキームの検証
+            if parsed.scheme not in ("http", "https"):
+                raise ValueError("Only HTTP and HTTPS are allowed")
+
+            # ホスト名の検証
+            if not parsed.netloc:
+                raise ValueError("Invalid URL: missing hostname")
+
+            # プライベート IP の検証
+            if not allow_private_ips:
+                try:
+                    ip = ipaddress.ip_address(parsed.hostname or "")
+                    if ip.is_private or ip.is_loopback:
+                        raise ValueError(
+                            "Private IP addresses are not allowed"
+                        )
+                except ValueError as e:
+                    if "is not a valid IPv4 or IPv6 address" not in str(e):
+                        raise
+
+        except Exception as e:
+            raise ValueError(f"Invalid URL: {str(e)}")
 
     def connect(self) -> None:
         """REST API に接続"""
@@ -32,9 +73,10 @@ class RestAdapter(BaseAdapter):
             import requests
 
             self.session = requests.Session()
-            # 接続テスト
+            # 接続テスト（タイムアウト付き）
             response = self.session.get(
-                f"{self.base_url}/{self.get_endpoint}"
+                f"{self.base_url}/{self.get_endpoint}",
+                timeout=self.timeout,
             )
             if response.status_code == 200:
                 self._connected = True
@@ -61,7 +103,8 @@ class RestAdapter(BaseAdapter):
 
         try:
             response = self.session.get(
-                f"{self.base_url}/{self.get_endpoint}"
+                f"{self.base_url}/{self.get_endpoint}",
+                timeout=self.timeout,
             )
             response.raise_for_status()
 
@@ -87,12 +130,14 @@ class RestAdapter(BaseAdapter):
                     response = self.session.put(
                         f"{self.base_url}/{self.update_endpoint}",
                         json=record,
+                        timeout=self.timeout,
                     )
                 else:
                     # 作成
                     response = self.session.post(
                         f"{self.base_url}/{self.create_endpoint}",
                         json=record,
+                        timeout=self.timeout,
                     )
 
                 response.raise_for_status()

@@ -1,6 +1,8 @@
 import sqlite3
+import re
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
+from pathlib import Path
 
 from core.target import Target
 from core.action import Action, Update, Delete
@@ -11,6 +13,17 @@ class SQLiteAdapter(BaseAdapter):
     """SQLite データベース用 Adapter"""
 
     def __init__(self, db_path: str, table_name: str):
+        # パスの検証
+        db_path = str(Path(db_path).resolve())
+        if not db_path.endswith(".db"):
+            raise ValueError("Database file must have .db extension")
+
+        # テーブル名の検証（英数字とアンダースコアのみ）
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
+            raise ValueError(
+                "Table name must contain only alphanumeric characters and underscores"
+            )
+
         self.db_path = db_path
         self.table_name = table_name
         self.conn: Optional[sqlite3.Connection] = None

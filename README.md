@@ -47,10 +47,17 @@ Excel / SQLite / API / UI / その他
 ✓ Dry Run
 ✓ Undo ログ
 
+## Phase 2 実装完了
+
+✓ Scheduler: 競合検出（Write-Write, Read-Write, Resource）
+✓ Validator: 事前検証と警告
+✓ トポロジカルソート（競合考慮）
+✓ 並列実行可能性判定
+
 ## 開発進捗
 
 - [x] Phase 1: コア実装
-- [ ] Phase 2: 依存関係・競合検出、複雑な Scheduler
+- [x] Phase 2: 依存関係・競合検出、Validator
 - [ ] Phase 3: Transaction, Rollback
 - [ ] Phase 4: Adapter (SQLite, Excel, REST API)
 - [ ] Phase 5: UI (CLI, Web)

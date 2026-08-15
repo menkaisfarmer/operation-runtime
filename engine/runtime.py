@@ -27,6 +27,7 @@ class OperationRuntime:
         data: List[Dict[str, Any]],
         dry_run: bool = False,
         validate: bool = True,
+        use_transaction: bool = True,
     ) -> ExecutionResult:
         """操作を実行"""
         plan = self.plan(operation, data)
@@ -38,7 +39,9 @@ class OperationRuntime:
                     f"Validation failed: {', '.join(str(e) for e in errors)}"
                 )
 
-        result = self.executor.execute(plan, data, dry_run=dry_run)
+        result = self.executor.execute(
+            plan, data, dry_run=dry_run, use_transaction=use_transaction
+        )
         self.execution_history.append(result)
         return result
 
@@ -65,3 +68,12 @@ class OperationRuntime:
         """計画を検証"""
         plan = self.plan(operation, data)
         return self.validator.validate(plan, data)
+
+    def undo(self, result: ExecutionResult, data: List[Dict[str, Any]]) -> bool:
+        """実行結果をロールバック"""
+        if not result.transaction_log:
+            return False
+
+        return result.transaction_log.rollback(data) if hasattr(
+            result.transaction_log, "rollback"
+        ) else False

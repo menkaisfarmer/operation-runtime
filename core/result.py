@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from engine.transaction import TransactionLog
 
 
 @dataclass
@@ -58,6 +61,7 @@ class ExecutionResult:
     total_success: int = 0
     total_failure: int = 0
     undo_log: List[Dict[str, Any]] = field(default_factory=list)
+    transaction_log: Optional[Any] = None
 
     def add_result(self, result: Result) -> None:
         """操作の結果を追加"""

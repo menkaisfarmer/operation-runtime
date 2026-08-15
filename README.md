@@ -54,14 +54,31 @@ Excel / SQLite / API / UI / その他
 ✓ トポロジカルソート（競合考慮）
 ✓ 並列実行可能性判定
 
+## Phase 3 実装完了
+
+✓ Transaction: ACID 準拠のトランザクション管理
+✓ Compensating Actions: ロールバック用の補償操作
+✓ Savepoints: トランザクション内のセーブポイント
+✓ Undo/Rollback: 実行済み操作の完全なロールバック
+
 ## 開発進捗
 
 - [x] Phase 1: コア実装
 - [x] Phase 2: 依存関係・競合検出、Validator
-- [ ] Phase 3: Transaction, Rollback
+- [x] Phase 3: Transaction, Rollback, Compensating Actions
 - [ ] Phase 4: Adapter (SQLite, Excel, REST API)
 - [ ] Phase 5: UI (CLI, Web)
 - [ ] Phase 6: AI/Natural Language
+
+## テスト
+
+```bash
+python3 tests/test_basic.py      # Phase 1: 4 テスト
+python3 tests/test_phase2.py     # Phase 2: 6 テスト
+python3 tests/test_phase3.py     # Phase 3: 7 テスト
+```
+
+計 17/17 全テスト成功
 
 ## クイックスタート
 

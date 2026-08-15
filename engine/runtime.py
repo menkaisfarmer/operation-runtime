@@ -5,6 +5,7 @@ from core.plan import Plan
 from core.result import ExecutionResult
 from .planner import Planner
 from .executor import Executor
+from .validator import Validator, ValidationError
 
 
 class OperationRuntime:
@@ -13,6 +14,7 @@ class OperationRuntime:
     def __init__(self):
         self.planner = Planner()
         self.executor = Executor()
+        self.validator = Validator()
         self.execution_history: List[ExecutionResult] = []
 
     def plan(self, operation: Operation, data: List[Dict[str, Any]]) -> Plan:
@@ -24,9 +26,18 @@ class OperationRuntime:
         operation: Operation,
         data: List[Dict[str, Any]],
         dry_run: bool = False,
+        validate: bool = True,
     ) -> ExecutionResult:
         """操作を実行"""
         plan = self.plan(operation, data)
+
+        if validate:
+            errors = self.validator.get_errors(plan, data)
+            if errors:
+                raise ValueError(
+                    f"Validation failed: {', '.join(str(e) for e in errors)}"
+                )
+
         result = self.executor.execute(plan, data, dry_run=dry_run)
         self.execution_history.append(result)
         return result
@@ -47,3 +58,10 @@ class OperationRuntime:
     def get_history(self) -> List[ExecutionResult]:
         """実行履歴を取得"""
         return self.execution_history
+
+    def validate(
+        self, operation: Operation, data: List[Dict[str, Any]]
+    ) -> List[ValidationError]:
+        """計画を検証"""
+        plan = self.plan(operation, data)
+        return self.validator.validate(plan, data)

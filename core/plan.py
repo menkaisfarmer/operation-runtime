@@ -1,10 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING
 from enum import Enum
 
 from .operation import Operation
 from .action import Action
 from .target import Target
+
+if TYPE_CHECKING:
+    from engine.scheduler import Conflict
 
 
 class ExecutionStatus(Enum):
@@ -46,6 +49,7 @@ class Plan:
     operation: Operation
     nodes: Dict[str, PlanNode] = field(default_factory=dict)
     execution_order: List[str] = field(default_factory=list)
+    conflicts: List[Any] = field(default_factory=list)
 
     def add_node(self, node: PlanNode) -> None:
         """ノードを追加"""

@@ -69,13 +69,25 @@ Excel / SQLite / API / UI / その他
 ✓ ExcelAdapter: Excel ファイル（openpyxl）
 ✓ RestAdapter: REST API バックエンド
 
+## Phase 5 実装完了
+
+✓ CLI Interface: コマンドラインツール
+  - list, update, delete, plan コマンド
+  - フィルタリングと値の更新
+  - メモリ/SQLite/Excel サポート
+✓ Web UI: Flask ベースの Web インターフェース
+  - リアルタイムデータ管理
+  - 操作の視覚的フィードバック
+  - 実行計画プレビュー
+  - レスポンシブデザイン
+
 ## 開発進捗
 
 - [x] Phase 1: コア実装
 - [x] Phase 2: 依存関係・競合検出、Validator
 - [x] Phase 3: Transaction, Rollback, Compensating Actions
 - [x] Phase 4: Adapter (Memory, SQLite, Excel, REST API)
-- [ ] Phase 5: UI (CLI, Web)
+- [x] Phase 5: UI (CLI, Web)
 - [ ] Phase 6: AI/Natural Language
 
 ## テスト
@@ -85,9 +97,34 @@ python3 tests/test_basic.py      # Phase 1: 4 テスト
 python3 tests/test_phase2.py     # Phase 2: 6 テスト
 python3 tests/test_phase3.py     # Phase 3: 7 テスト
 python3 tests/test_phase4.py     # Phase 4: 5 テスト
+python3 tests/test_phase5.py     # Phase 5: 8 テスト
 ```
 
-計 24/24 全テスト成功
+計 30/30 全テスト成功
+
+## CLI 使用例
+
+```bash
+# メモリ内データを更新
+python3 -m ui.cli memory --data '[{"id":1,"status":"pending"}]' update --set status=completed
+
+# SQLite データベースを更新
+python3 -m ui.cli sqlite data.db users update --filter 'status=pending' --set status=completed
+
+# Excel ファイルを更新
+python3 -m ui.cli excel data.xlsx Sheet1 update --set value=100 --dry-run
+```
+
+## Web UI
+
+```bash
+# Flask をインストール
+pip install flask
+
+# Web UI を起動
+python3 -m ui.web
+# http://127.0.0.1:5000 にアクセス
+```
 
 ## Adapter 使用例
 

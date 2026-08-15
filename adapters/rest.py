@@ -27,6 +27,10 @@ class RestAdapter(BaseAdapter):
         # URL の検証
         self._validate_url(base_url, allow_private_ips)
 
+        # エンドポイントの検証（パストラバーサル対策）
+        for ep in [get_endpoint, create_endpoint, update_endpoint, delete_endpoint]:
+            self._validate_endpoint(ep)
+
         self.base_url = base_url
         self.get_endpoint = get_endpoint
         self.create_endpoint = create_endpoint
@@ -37,6 +41,13 @@ class RestAdapter(BaseAdapter):
         self._connected = False
         self._transactions = {}
         self.session = None
+
+    @staticmethod
+    def _validate_endpoint(endpoint: str) -> None:
+        """エンドポイントの検証（パストトラバーサル対策）"""
+        # ../  を含む場合は拒否
+        if ".." in endpoint or endpoint.startswith("/"):
+            raise ValueError("Invalid endpoint: cannot contain .. or start with /")
 
     @staticmethod
     def _validate_url(url: str, allow_private_ips: bool = False) -> None:
@@ -52,18 +63,44 @@ class RestAdapter(BaseAdapter):
             if not parsed.netloc:
                 raise ValueError("Invalid URL: missing hostname")
 
+            # ホスト名とポートの検証
+            hostname = parsed.hostname
+            if not hostname:
+                raise ValueError("Invalid hostname")
+
             # プライベート IP の検証
             if not allow_private_ips:
+                # ホスト名から IP を解決（DNS リバインディング対策）
                 try:
-                    ip = ipaddress.ip_address(parsed.hostname or "")
-                    if ip.is_private or ip.is_loopback:
-                        raise ValueError(
-                            "Private IP addresses are not allowed"
-                        )
-                except ValueError as e:
-                    if "is not a valid IPv4 or IPv6 address" not in str(e):
-                        raise
+                    import socket
+                    try:
+                        ip_addr = socket.gethostbyname(hostname)
+                        ip = ipaddress.ip_address(ip_addr)
+                        if ip.is_private or ip.is_loopback or ip.is_reserved:
+                            raise ValueError(
+                                "Private/reserved IP addresses are not allowed"
+                            )
+                    except socket.gaierror:
+                        # DNS 解決失敗時も慎重に
+                        pass
 
+                    # リテラル IP の場合も検証
+                    try:
+                        ip = ipaddress.ip_address(hostname)
+                        if ip.is_private or ip.is_loopback or ip.is_reserved:
+                            raise ValueError(
+                                "Private/reserved IP addresses are not allowed"
+                            )
+                    except ValueError:
+                        pass  # ホスト名の場合はここで例外になる
+
+                except Exception as e:
+                    if "not allowed" not in str(e):
+                        raise ValueError(f"URL validation failed: {str(e)}")
+                    raise
+
+        except ValueError:
+            raise
         except Exception as e:
             raise ValueError(f"Invalid URL: {str(e)}")
 

@@ -24,10 +24,13 @@ class ExcelAdapter(BaseAdapter):
 
     @staticmethod
     def _sanitize_cell_value(value: Any) -> Any:
-        """Formula Injection 対策：数式のプレフィックスをエスケープ"""
-        if isinstance(value, str):
-            # =, +, -, @ で始まる場合はシングルクォートを付与
-            if value and value[0] in ("=", "+", "-", "@"):
+        """Formula Injection 対策：危険な値をエスケープ"""
+        if isinstance(value, str) and value:
+            # 数式のプレフィックスをチェック
+            if value[0] in ("=", "+", "-", "@", "\t", "\r"):
+                return f"'{value}"
+            # URL スキームも危険（特に http:, ftp:）
+            if value.startswith(("http:", "ftp:", "file:", "\\\\", "//", "|")):
                 return f"'{value}"
         return value
 

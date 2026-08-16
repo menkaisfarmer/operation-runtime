@@ -81,6 +81,22 @@ Excel / SQLite / API / UI / その他
   - 実行計画プレビュー
   - レスポンシブデザイン
 
+## Phase 6 実装完了
+
+✓ NaturalLanguageParser: 自然言語解析
+  - 操作タイプ自動検出（update/delete/list）
+  - 条件と値の抽出
+  - 信頼度スコアリング
+  - 日本語/英語対応
+✓ OperationGenerator: Operation 自動生成
+  - 解析結果から Operation を生成
+  - 複数条件対応
+  - 操作ごとのサジェッション生成
+✓ ApprovalWorkflow: Human approval ワークフロー
+  - 実行前確認機能
+  - Dry-run プレビュー
+  - 対話/非対話モード
+
 ## 開発進捗
 
 - [x] Phase 1: コア実装
@@ -88,7 +104,7 @@ Excel / SQLite / API / UI / その他
 - [x] Phase 3: Transaction, Rollback, Compensating Actions
 - [x] Phase 4: Adapter (Memory, SQLite, Excel, REST API)
 - [x] Phase 5: UI (CLI, Web)
-- [ ] Phase 6: AI/Natural Language
+- [x] Phase 6: AI/Natural Language
 
 ## テスト
 
@@ -98,9 +114,10 @@ python3 tests/test_phase2.py     # Phase 2: 6 テスト
 python3 tests/test_phase3.py     # Phase 3: 7 テスト
 python3 tests/test_phase4.py     # Phase 4: 5 テスト
 python3 tests/test_phase5.py     # Phase 5: 8 テスト
+python3 tests/test_phase6.py     # Phase 6: 8 テスト
 ```
 
-計 30/30 全テスト成功
+計 38/38 全テスト成功
 
 ## CLI 使用例
 
@@ -124,6 +141,45 @@ pip install flask
 # Web UI を起動
 python3 -m ui.web
 # http://127.0.0.1:5000 にアクセス
+```
+
+## Natural Language Processing
+
+```python
+from ai.approval import ApprovalWorkflow
+from engine.runtime import OperationRuntime
+
+runtime = OperationRuntime()
+workflow = ApprovalWorkflow(runtime)
+
+data = [
+    {"id": 1, "status": "pending"},
+    {"id": 2, "status": "pending"}
+]
+
+# 自然言語から Operation を生成・実行
+operation, success = workflow.process_natural_language(
+    "status=pending のレコードを status=completed に更新",
+    data,
+    interactive=True  # ユーザー確認を要求
+)
+```
+
+### サポート対象の自然言語形式
+
+```
+# UPDATE
+"UPDATE users SET status=completed WHERE status=pending"
+"status が pending のレコードを status=completed に更新"
+"pending のレコードを completed に変更"
+
+# DELETE
+"DELETE FROM users WHERE status=archived"
+"status=archived のレコードを削除"
+
+# LIST
+"LIST all records"
+"すべてのレコードを表示"
 ```
 
 ## Adapter 使用例

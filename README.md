@@ -106,6 +106,23 @@ Excel / SQLite / API / UI / その他
 - [x] Phase 5: UI (CLI, Web)
 - [x] Phase 6: AI/Natural Language
 
+## 最小限 UI
+
+最も簡潔な Web インターフェース（約 200 行）
+
+```bash
+pip install flask
+python3 -m ui.minimal
+# http://127.0.0.1:5000 にアクセス
+```
+
+**特徴**:
+- JSON データのロード・表示
+- UPDATE/DELETE 操作
+- Dry-run プレビュー
+- リアルタイム統計表示
+- フィルタリング対応
+
 ## テスト
 
 ```bash
@@ -115,9 +132,10 @@ python3 tests/test_phase3.py     # Phase 3: 7 テスト
 python3 tests/test_phase4.py     # Phase 4: 5 テスト
 python3 tests/test_phase5.py     # Phase 5: 8 テスト
 python3 tests/test_phase6.py     # Phase 6: 8 テスト
+python3 tests/test_minimal_ui.py # Minimal UI: 4 テスト
 ```
 
-計 38/38 全テスト成功
+計 42/42 全テスト成功
 
 ## CLI 使用例
 
